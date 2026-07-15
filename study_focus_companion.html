@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>하루공부 - 고등학생을 위한 집중 도우미</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons (아이콘 라이브러리) -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Pretendard', sans-serif;
+            background-color: #f8fafc;
+        }
+        /* 파란색-보라색 그라데이션 효과 커스텀 */
+        .brand-gradient {
+            background: linear-gradient(135deg, #6366f1 0%, #3b82f6 100%);
+        }
+        .brand-text-gradient {
+            background: linear-gradient(135deg, #4f46e5 0%, #2563eb 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        /* 커스텀 진행 바 애니메이션 효과 */
+        .progress-transition {
+            transition: stroke-dashoffset 1s linear;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between text-slate-800">
+
+    <!-- 헤더 영역 -->
+    <header class="bg-white border-b border-slate-100 py-4 px-6 sticky top-0 z-50">
+        <div class="max-w-4xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <div class="p-2 brand-gradient rounded-xl text-white">
+                    <i data-lucide="graduation-cap" class="w-6 h-6"></i>
+                </div>
+                <span class="text-xl font-bold tracking-tight text-slate-900">하루공부 <span class="text-sm font-medium text-indigo-500 ml-1">Focus</span></span>
+            </div>
+            <div id="live-clock" class="text-sm font-semibold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full">
+                00:00:00
+            </div>
+        </div>
+    </header>
+
+    <!-- 메인 컨텐츠 -->
+    <main class="flex-grow max-w-4xl w-full mx-auto p-4 md:p-6 grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+        
+        <!-- 왼쪽 세션: 타이머 카드 (7/12) -->
+        <section class="md:col-span-7 space-y-6">
+            <!-- 오늘의 응원 메시지 카드 -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-start space-x-3">
+                <div class="text-amber-500 mt-1">
+                    <i data-lucide="sparkles" class="w-5 h-5 fill-amber-500"></i>
+                </div>
+                <div>
+                    <h4 class="text-xs font-semibold text-indigo-500 uppercase tracking-wider mb-0.5">오늘의 응원 한마디</h4>
+                    <p id="quote-display" class="text-sm font-medium text-slate-600">오늘의 노력이 내일의 빛나는 열매가 될 거야. 파이팅!</p>
+                </div>
+            </div>
+
+            <!-- 타이머 카드 -->
+            <div class="bg-white p-6 md:p-8 rounded-3xl border border-slate-100 shadow-sm flex flex-col items-center relative overflow-hidden">
+                <!-- 모드 표시 (집중/휴식) -->
+                <div class="flex space-x-2 mb-6">
+                    <button id="mode-focus" class="px-4 py-2 rounded-full text-xs font-bold transition-all duration-300 shadow-sm scale-105 bg-indigo-50 text-indigo-600 border border-indigo-100">
+                        <span class="flex items-center"><i data-lucide="book-open" class="w-3.5 h-3.5 mr-1"></i> 집중 (25분)</span>
+                    </button>
+                    <button id="mode-break" class="px-4 py-2 rounded-full text-xs font-bold text-slate-400 hover:text-slate-600 transition-all duration-300">
+                        <span class="flex items-center"><i data-lucide="coffee" class="w-3.5 h-3.5 mr-1"></i> 짧은 휴식 (5분)</span>
+                    </button>
+                </div>
+
+                <!-- 타이머 원형 진행바 및 숫자 -->
+                <div class="relative w-64 h-64 md:w-72 md:h-72 flex items-center justify-center my-4">
+                    <!-- SVG 원형 프로그레스 -->
+                    <svg class="absolute inset-0 w-full h-full -rotate-90">
+                        <!-- 배경 원 -->
+                        <circle cx="50%" cy="50%" r="44%" class="stroke-slate-100 fill-none" stroke-width="8"></circle>
+                        <!-- 진행 원 -->
+                        <circle id="timer-progress" cx="50%" cy="50%" r="44%" class="stroke-indigo-600 fill-none progress-transition" stroke-width="8" stroke-dasharray="816" stroke-dashoffset="0" stroke-linecap="round"></circle>
+                    </svg>
+
+                    <!-- 타이머 숫자 표시 -->
+                    <div class="text-center z-10">
+                        <div id="timer-display" class="text-5xl md:text-6xl font-black text-slate-800 tracking-tight mb-2">25:00</div>
+                        <span id="timer-status-text" class="text-xs font-semibold uppercase tracking-widest text-indigo-500">지 집중할 시간!</span>
+                    </div>
+                </div>
+
+                <!-- 타이머 조작 버튼 그룹 -->
+                <div class="flex items-center space-x-3 w-full max-w-xs mt-6">
+                    <button id="btn-toggle" class="flex-1 py-3 px-6 rounded-xl brand-gradient text-white font-semibold shadow-md hover:opacity-95 transition-all flex items-center justify-center space-x-2">
+                        <i id="btn-toggle-icon" data-lucide="play" class="w-5 h-5 fill-white"></i>
+                        <span id="btn-toggle-text">시작하기</span>
+                    </button>
+                    <button id="btn-reset" class="p-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-800 transition-all" title="초기화">
+                        <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
+                    </button>
+                </div>
+
+                <!-- 세션 횟수 기록 -->
+                <div class="mt-6 pt-6 border-t border-slate-100 w-full flex justify-around text-center text-slate-500 text-sm">
+                    <div>
+                        <span class="block text-xs font-medium text-slate-400">오늘의 집중</span>
+                        <span id="focus-count" class="text-lg font-bold text-indigo-600">0회</span>
+                    </div>
+                    <div class="border-l border-slate-100"></div>
+                    <div>
+                        <span class="block text-xs font-medium text-slate-400">오늘의 휴식</span>
+                        <span id="break-count" class="text-lg font-bold text-blue-500">0회</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 오른쪽 세션: 할 일(To-Do) 리스트 (5/12) -->
+        <section class="md:col-span-5 space-y-6">
+            <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+                <!-- 타이틀 -->
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-900">오늘의 할 일</h3>
+                        <p class="text-xs text-slate-400">목표를 쪼개어 하나씩 해결해봐요</p>
+                    </div>
+                    <!-- 진행률 표시 배지 -->
+                    <span id="todo-progress-badge" class="px-2.5 py-1 text-xs font-bold bg-slate-100 text-slate-600 rounded-lg transition-all duration-300">0% 완료</span>
+                </div>
+
+                <!-- 새로운 할 일 입력 폼 -->
+                <form id="todo-form" class="flex space-x-2 mb-6">
+                    <input type="text" id="todo-input" placeholder="새로운 학습 계획을 적으세요..." maxlength="30" class="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-slate-50 hover:bg-slate-50/50 transition-all" required>
+                    <button type="submit" class="p-2.5 rounded-xl brand-gradient text-white shadow-sm hover:opacity-95 transition-all" title="추가">
+                        <i data-lucide="plus" class="w-5 h-5"></i>
+                    </button>
+                </form>
+
+                <!-- 할 일 리스트 목록 -->
+                <div class="space-y-2 max-h-[350px] overflow-y-auto pr-1" id="todo-list">
+                    <!-- 스크립트로 렌더링될 영역 -->
+                </div>
+
+                <!-- 할 일 통계 데이터 -->
+                <div class="mt-6 pt-5 border-t border-slate-100 flex justify-between items-center text-xs text-slate-400">
+                    <div>남은 일: <span id="remaining-count" class="font-bold text-indigo-500">0</span>개</div>
+                    <div>전체 완료: <span id="completed-count" class="font-bold text-emerald-500">0</span>/ <span id="total-count" class="font-bold">0</span></div>
+                </div>
+            </div>
+
+            <!-- 학습 유용한 팁 카드 -->
+            <div class="bg-indigo-50/50 p-5 rounded-2xl border border-indigo-100/50">
+                <h4 class="text-xs font-bold text-indigo-600 flex items-center mb-2">
+                    <i data-lucide="info" class="w-3.5 h-3.5 mr-1.5"></i> 포모도로 학습법이란?
+                </h4>
+                <p class="text-xs text-slate-600 leading-relaxed">
+                    25분 동안 휴대폰이나 SNS 등 다른 방해 요소를 차단하고 한 가지 학습에 극도로 집중한 후, 5분 동안 머리를 식혀주는 과학적인 학습 주기 관리법입니다.
+                </p>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- 커스텀 알림/완료 팝업 레이아웃 (브라우저 Alert 대체) -->
+    <div id="custom-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[999] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-100 text-center transform scale-90 opacity-0 transition-all duration-300" id="modal-content">
+            <div id="modal-icon-container" class="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center">
+                <!-- 동적 아이콘 삽입 -->
+            </div>
+            <h3 id="modal-title" class="text-xl font-bold text-slate-900 mb-2">알림 타이틀</h3>
+            <p id="modal-body" class="text-slate-500 text-sm mb-6 leading-relaxed">알림 메시지 내용입니다.</p>
+            <button id="modal-close" class="w-full py-3 px-6 rounded-xl brand-gradient text-white font-semibold shadow-md hover:opacity-95 transition-all">
+                확인했습니다
+            </button>
+        </div>
+    </div>
+
+    <!-- 푸터 영역 -->
+    <footer class="bg-white border-t border-slate-100 py-6 px-4 text-center text-xs text-slate-400">
+        <div class="max-w-4xl mx-auto space-y-1">
+            <p>© 2026 하루공부. 집중하고 꿈을 향해 나아가세요.</p>
+            <p>Made for high school students who run toward their dreams.</p>
+        </div>
+    </footer>
+
+    <!-- 웹 브라우저 오디오 효과를 위한 가상 Audio Context 및 비프음 메이커 -->
+    <script>
+        // 무벌룬/브라우저 제한 없는 사운드 효과 메이커
+        const playBeep = (type) => {
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContext) return;
+                const ctx = new AudioContext();
+                
+                if (type === 'focus-end') {
+                    // 집중 종료 사운드 (두 번 울림)
+                    const playTone = (time, freq, duration) => {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(freq, time);
+                        gain.gain.setValueAtTime(0.3, time);
+                        gain.gain.exponentialRampToValueAtTime(0.01, time + duration - 0.05);
+                        osc.start(time);
+                        osc.stop(time + duration);
+                    };
+                    playTone(ctx.currentTime, 587.33, 0.4); // D5
+                    playTone(ctx.currentTime + 0.5, 880, 0.6); // A5
+                } else if (type === 'break-end') {
+                    // 휴식 종료 사운드 (쾌활한 삼연음)
+                    const playTone = (time, freq, duration) => {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(freq, time);
+                        gain.gain.setValueAtTime(0.25, time);
+                        gain.gain.exponentialRampToValueAtTime(0.01, time + duration - 0.05);
+                        osc.start(time);
+                        osc.stop(time + duration);
+                    };
+                    playTone(ctx.currentTime, 523.25, 0.15); // C5
+                    playTone(ctx.currentTime + 0.2, 659.25, 0.15); // E5
+                    playTone(ctx.currentTime + 0.4, 783.99, 0.4); // G5
+                } else if (type === 'click') {
+                    // 클릭 피드백음
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.frequency.setValueAtTime(1200, ctx.currentTime);
+                    gain.gain.setValueAtTime(0.05, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.05);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.05);
+                }
+            } catch (e) {
+                console.log("Audio play blocked or unsupported:", e);
+            }
+        };
+    </script>
+
+    <!-- 메인 비즈니스 로직 및 컴포넌트 마운트 -->
+    <script>
+        // 1. 상태 데이터 정의
+        let state = {
+            timer: {
+                minutes: 25,
+                seconds: 0,
+                totalSeconds: 25 * 60,
+                currentSeconds: 25 * 60,
+                isRunning: false,
+                intervalId: null,
+                mode: 'focus', // 'focus' | 'break'
+                focusCount: 0,
+                breakCount: 0
+            },
+            todos: [
+                { id: 1, text: '수학 모의고사 오답노트 정리하기', completed: false },
+                { id: 2, text: '영어 수능특강 독해 지문 5개 분석', completed: false },
+                { id: 3, text: '국어 비문학 지문 3개 풀고 해설 읽기', completed: false }
+            ],
+            quotes: [
+                "오늘의 노력이 내일의 빛나는 열매가 될 거야.",
+                "지치더라도 절대 포기하지 마, 거의 다 왔어!",
+                "네 능력은 네가 생각하는 것보다 훨씬 엄청나단다.",
+                "가장 어두운 밤도 결국 지나가고 아침 해가 떠올라.",
+                "집중하는 이 시간 하나하나가 미래의 네 지도가 될 거야.",
+                "남들과 비교하지 말고, 어제의 자신보다 1%만 성장하자.",
+                "공부하는 너의 뒷모습은 언제나 가장 아름다워.",
+                "할 수 있다고 믿는 사람이 결국 해내는 법이야."
+            ]
+        };
+
+        // DOM 참조 상수들
+        const timerDisplay = document.getElementById('timer-display');
+        const timerProgress = document.getElementById('timer-progress');
+        const timerStatusText = document.getElementById('timer-status-text');
+        const btnToggle = document.getElementById('btn-toggle');
+        const btnToggleText = document.getElementById('btn-toggle-text');
+        const btnToggleIcon = document.getElementById('btn-toggle-icon');
+        const btnReset = document.getElementById('btn-reset');
+        
+        const modeFocus = document.getElementById('mode-focus');
+        const modeBreak = document.getElementById('mode-break');
+        
+        const focusCountEl = document.getElementById('focus-count');
+        const breakCountEl = document.getElementById('break-count');
+        
+        const todoListEl = document.getElementById('todo-list');
+        const todoForm = document.getElementById('todo-form');
+        const todoInput = document.getElementById('todo-input');
+        const todoProgressBadge = document.getElementById('todo-progress-badge');
+        const remainingCountEl = document.getElementById('remaining-count');
+        const completedCountEl = document.getElementById('completed-count');
+        const totalCountEl = document.getElementById('total-count');
+        
+        const quoteDisplay = document.getElementById('quote-display');
+        const liveClock = document.getElementById('live-clock');
+
+        // 커스텀 모달 엘리먼트들
+        const customModal = document.getElementById('custom-modal');
+        const modalContent = document.getElementById('modal-content');
+        const modalIconContainer = document.getElementById('modal-icon-container');
+        const modalTitle = document.getElementById('modal-title');
+        const modalBody = document.getElementById('modal-body');
+        const modalClose = document.getElementById('modal-close');
+
+        // 2. 초기 렌더링 및 인터페이스 초기화
+        window.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            updateClock();
+            setInterval(updateClock, 1000);
+            
+            // 응원 멘트 롤링 변경
+            changeQuote();
+            setInterval(changeQuote, 180000); // 3분마다 변경
+            
+            // To-Do 초기 렌더링
+            renderTodos();
+            
+            // 타이머 디스플레이 초기화
+            updateTimerDisplay();
+        });
+
+        // 3. 라이브 시계 관리 기능
+        function updateClock() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            liveClock.textContent = `${hours}:${minutes}:${seconds}`;
+        }
+
+        // 4. 응원 문구 랜덤 선정 기능
+        function changeQuote() {
+            const randomIndex = Math.floor(Math.random() * state.quotes.length);
+            quoteDisplay.textContent = state.quotes[randomIndex];
+        }
+
+        // 5. 커스텀 모달 기능 (alert 대체)
+        function showModal(title, message, type) {
+            modalTitle.textContent = title;
+            modalBody.textContent = message;
+            
+            // 타입별 디자인 분기
+            if (type === 'focus') {
+                modalIconContainer.className = "w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center bg-indigo-50 text-indigo-500";
+                modalIconContainer.innerHTML = '<i data-lucide="award" class="w-8 h-8"></i>';
+            } else if (type === 'break') {
+                modalIconContainer.className = "w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center bg-blue-50 text-blue-500";
+                modalIconContainer.innerHTML = '<i data-lucide="coffee" class="w-8 h-8"></i>';
+            }
+            
+            lucide.createIcons();
+            
+            // 열기 효과 애니메이션
+            customModal.classList.remove('hidden');
+            setTimeout(() => {
+                modalContent.classList.remove('scale-90', 'opacity-0');
+                modalContent.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        }
+
+        function closeModal() {
+            modalContent.classList.remove('scale-100', 'opacity-100');
+            modalContent.classList.add('scale-90', 'opacity-0');
+            setTimeout(() => {
+                customModal.classList.add('hidden');
+            }, 300);
+        }
+
+        modalClose.addEventListener('click', closeModal);
+
+        // 6. 타이머 시스템 로직
+        function updateTimerDisplay() {
+            const minutes = Math.floor(state.timer.currentSeconds / 60);
+            const seconds = state.timer.currentSeconds % 60;
+            
+            // 텍스트 업데이트
+            timerDisplay.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            
+            // 타이틀 바 동기화
+            document.title = `[${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}] 하루공부`;
+
+            // SVG 원형 진행 바 업데이트
+            const circumference = 2 * Math.PI * (288 * 0.44); // r=44% 일때 (대략 796px)
+            const strokeDashoffset = circumference - (state.timer.currentSeconds / state.timer.totalSeconds) * circumference;
+            timerProgress.style.strokeDasharray = `${circumference}`;
+            timerProgress.style.strokeDashoffset = `${strokeDashoffset}`;
+        }
+
+        function switchMode(newMode) {
+            playBeep('click');
+            if (state.timer.isRunning) {
+                pauseTimer();
+            }
+
+            state.timer.mode = newMode;
+            
+            if (newMode === 'focus') {
+                state.timer.totalSeconds = 25 * 60;
+                state.timer.currentSeconds = 25 * 60;
+                timerStatusText.textContent = "집중할 시간!";
+                timerStatusText.className = "text-xs font-semibold uppercase tracking-widest text-indigo-500";
+                timerProgress.classList.remove('stroke-blue-500');
+                timerProgress.classList.add('stroke-indigo-600');
+                
+                // 버튼 스타일 조정
+                modeFocus.className = "px-4 py-2 rounded-full text-xs font-bold transition-all duration-300 shadow-sm scale-105 bg-indigo-50 text-indigo-600 border border-indigo-100";
+                modeBreak.className = "px-4 py-2 rounded-full text-xs font-bold text-slate-400 hover:text-slate-600 transition-all duration-300";
+            } else {
+                state.timer.totalSeconds = 5 * 60;
+                state.timer.currentSeconds = 5 * 60;
+                timerStatusText.textContent = "가벼운 기지개를 켜보세요";
+                timerStatusText.className = "text-xs font-semibold uppercase tracking-widest text-blue-500";
+                timerProgress.classList.remove('stroke-indigo-600');
+                timerProgress.classList.add('stroke-blue-500');
+                
+                // 버튼 스타일 조정
+                modeBreak.className = "px-4 py-2 rounded-full text-xs font-bold transition-all duration-300 shadow-sm scale-105 bg-blue-50 text-blue-500 border border-blue-100";
+                modeFocus.className = "px-4 py-2 rounded-full text-xs font-bold text-slate-400 hover:text-slate-600 transition-all duration-300";
+            }
+
+            updateTimerDisplay();
+        }
+
+        function startTimer() {
+            if (state.timer.isRunning) return;
+            
+            playBeep('click');
+            state.timer.isRunning = true;
+            btnToggleText.textContent = "일시정지";
+            btnToggleIcon.setAttribute('data-lucide', 'pause');
+            lucide.createIcons();
+
+            state.timer.intervalId = setInterval(() => {
+                if (state.timer.currentSeconds > 0) {
+                    state.timer.currentSeconds--;
+                    updateTimerDisplay();
+                } else {
+                    handleSessionComplete();
+                }
+            }, 1000);
+        }
+
+        function pauseTimer() {
+            if (!state.timer.isRunning) return;
+
+            state.timer.isRunning = false;
+            btnToggleText.textContent = "이어하기";
+            btnToggleIcon.setAttribute('data-lucide', 'play');
+            lucide.createIcons();
+
+            clearInterval(state.timer.intervalId);
+            state.timer.intervalId = null;
+        }
+
+        function resetTimer() {
+            playBeep('click');
+            pauseTimer();
+            state.timer.currentSeconds = state.timer.totalSeconds;
+            
+            btnToggleText.textContent = "시작하기";
+            btnToggleIcon.setAttribute('data-lucide', 'play');
+            lucide.createIcons();
+            
+            updateTimerDisplay();
+        }
+
+        function handleSessionComplete() {
+            clearInterval(state.timer.intervalId);
+            state.timer.isRunning = false;
+            state.timer.intervalId = null;
+
+            btnToggleText.textContent = "시작하기";
+            btnToggleIcon.setAttribute('data-lucide', 'play');
+            lucide.createIcons();
+
+            if (state.timer.mode === 'focus') {
+                state.timer.focusCount++;
+                focusCountEl.textContent = `${state.timer.focusCount}회`;
+                playBeep('focus-end');
+                showModal("참 잘했어요! 🎓", "집중 시간(25분)이 모두 채워졌습니다. 이제 5분 동안 머리를 푹 쉬어주세요.", "focus");
+                switchMode('break');
+            } else {
+                state.timer.breakCount++;
+                breakCountEl.textContent = `${state.timer.breakCount}회`;
+                playBeep('break-end');
+                showModal("충전 완료! ⚡", "가뿐한 몸과 마음으로 다시 25분간 집중 세션을 시작해볼까요?", "break");
+                switchMode('focus');
+            }
+        }
+
+        // 타이머 이벤트 리스너 연동
+        btnToggle.addEventListener('click', () => {
+            if (state.timer.isRunning) {
+                pauseTimer();
+            } else {
+                startTimer();
+            }
+        });
+
+        btnReset.addEventListener('click', resetTimer);
+        modeFocus.addEventListener('click', () => switchMode('focus'));
+        modeBreak.addEventListener('click', () => switchMode('break'));
+
+
+        // 7. To-Do 리스트 비즈니스 로직
+        function renderTodos() {
+            todoListEl.innerHTML = '';
+            
+            if (state.todos.length === 0) {
+                todoListEl.innerHTML = `
+                    <div class="flex flex-col items-center justify-center py-8 text-center text-slate-300">
+                        <i data-lucide="clipboard-list" class="w-12 h-12 mb-2"></i>
+                        <span class="text-xs">등록된 학습 계획이 없습니다.<br>목표를 먼저 추가해보세요!</span>
+                    </div>
+                `;
+                lucide.createIcons();
+                updateTodoStats();
+                return;
+            }
+
+            state.todos.forEach(todo => {
+                const todoItem = document.createElement('div');
+                todoItem.className = `flex items-center justify-between p-3.5 rounded-2xl border transition-all duration-300 ${
+                    todo.completed 
+                        ? 'bg-slate-50/50 border-slate-100/80 text-slate-400' 
+                        : 'bg-white border-slate-100 hover:border-slate-200/80 text-slate-700 shadow-sm'
+                }`;
+
+                todoItem.innerHTML = `
+                    <div class="flex items-center space-x-3 flex-1 min-w-0">
+                        <button onclick="toggleTodo(${todo.id})" class="focus:outline-none transition-transform active:scale-95 flex-shrink-0" title="완료 처리">
+                            ${todo.completed 
+                                ? `<span class="flex items-center justify-center w-5.5 h-5.5 rounded-full bg-emerald-500 border border-emerald-500 text-white p-0.5"><i data-lucide="check" class="w-3.5 h-3.5"></i></span>`
+                                : `<span class="flex items-center justify-center w-5.5 h-5.5 rounded-full border-2 border-slate-300 bg-white hover:border-indigo-500 transition-colors"></span>`
+                            }
+                        </button>
+                        <span class="text-sm font-medium break-all ${todo.completed ? 'line-through text-slate-400' : ''}">${todo.text}</span>
+                    </div>
+                    <button onclick="deleteTodo(${todo.id})" class="text-slate-400 hover:text-rose-500 p-1 rounded-lg hover:bg-slate-50 transition-all flex-shrink-0 ml-2" title="삭제">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                `;
+                todoListEl.appendChild(todoItem);
+            });
+
+            lucide.createIcons();
+            updateTodoStats();
+        }
+
+        function updateTodoStats() {
+            const total = state.todos.length;
+            const completed = state.todos.filter(t => t.completed).length;
+            const remaining = total - completed;
+            const percentage = total === 0 ? 0 : Math.round((completed / total) * 100);
+
+            // 통계 요소 업데이트
+            remainingCountEl.textContent = remaining;
+            completedCountEl.textContent = completed;
+            totalCountEl.textContent = total;
+            
+            // 배지 및 그래프 업데이트
+            todoProgressBadge.textContent = `${percentage}% 완료`;
+            if (percentage === 100 && total > 0) {
+                todoProgressBadge.className = "px-2.5 py-1 text-xs font-bold bg-emerald-50 text-emerald-600 rounded-lg transition-all duration-300";
+            } else if (percentage >= 50) {
+                todoProgressBadge.className = "px-2.5 py-1 text-xs font-bold bg-indigo-50 text-indigo-600 rounded-lg transition-all duration-300";
+            } else {
+                todoProgressBadge.className = "px-2.5 py-1 text-xs font-bold bg-slate-100 text-slate-600 rounded-lg transition-all duration-300";
+            }
+        }
+
+        // To-Do 등록 액션
+        todoForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const text = todoInput.value.trim();
+            if (!text) return;
+
+            const newTodo = {
+                id: Date.now(),
+                text: text,
+                completed: false
+            };
+
+            state.todos.push(newTodo);
+            todoInput.value = '';
+            
+            playBeep('click');
+            renderTodos();
+        });
+
+        // To-Do 완료 전환 상태 조절 (전역 함수로 노출)
+        window.toggleTodo = function(id) {
+            state.todos = state.todos.map(todo => {
+                if (todo.id === id) {
+                    const nextCompleted = !todo.completed;
+                    if (nextCompleted) playBeep('click');
+                    return { ...todo, completed: nextCompleted };
+                }
+                return todo;
+            });
+            renderTodos();
+        };
+
+        // To-Do 삭제 액션 (전역 함수로 노출)
+        window.deleteTodo = function(id) {
+            state.todos = state.todos.filter(todo => todo.id !== id);
+            playBeep('click');
+            renderTodos();
+        };
+    </script>
+</body>
+</html>
